@@ -2,22 +2,21 @@
 import re
 import matplotlib.pyplot as plt
 import json
-operators = []
-operands = []
-output = []
 
-with open('commands.json') as file:
-    myfile = json.load(file)
-    greeks = myfile["greek"]
 
-sample = "4.5+3.2 / (9.1 -  6 )"
-sample = list(filter((lambda a:a != " "), sample))
-sample = "".join(sample)
+def initialise_and_clean(text_input):
+    with open('commands.json') as file:
+        myfile = json.load(file)
+        greeks = myfile["greek"]
 
-class Node:
-    def __init__(self, data):
-        self.data = data
-        self.children = []
+    sample = list(filter((lambda a:a != " "), text_input))
+    sample = "".join(sample)
+    return sample
+
+# class Node:
+#     def __init__(self, data):
+#         self.data = data
+#         self.children = []
 
 
 def check_precedence(op1:str, op2:str):
@@ -60,7 +59,7 @@ def typesetting(text):
 
     #This forces the program to search through the list several times rather than doing just 2 passes
     # Look through the text find the matches in the dictionary
-    matches = re.findall(x,text)
+    matches = re.search(x,text)
 
     finds = []
     #matching each key to its relevant value it needs to be changed to in the form of a list of tuples
@@ -97,11 +96,13 @@ def is_op(entry):
         return False
 
 def tokenize(entry):
-    regex = r'[+/*()-^]|\d+.?\d+?|'
+    test = "9.1 + 23 * 5*4- (110.3 -2)"
+    myregex = r'(\d+\.?\d*|\.\d+|[+/*()-^])'
+    #regex = r'[+/*()-^]|\d+.?\d+?|' #Note this did not work
     gl = '|'.join(re.escape(value) for value in greeks.values())
-    regex = regex + '|' + gl
-    print(regex)
-    tokens = re.findall(regex, entry)
+    myregex = myregex + '|' + gl
+    #print(regex)
+    tokens = re.findall(myregex, entry)
     print(tokens)
     return tokens
 
@@ -114,36 +115,36 @@ def peek_the_stack():
     except IndexError:
         return None
 
+if __name__ == '__main__':
+    test = "9.1 + 23 * 5*4- (110.3 -2)"
+    # Implementation of the actual shunting yard algorithm
+    sample = initialise_and_clean()
+    print(sample)
+    sample = tokenize(sample)
+    tokens = sample
+    print(type(sample))
+    i = 0
 
-# Implementation of the actual shunting yard algorithm
-print(sample)
-sample = tokenize(sample)
-tokens = sample
-print(type(sample))
-i = 0
-while i < len(sample):
-    token = tokens[i]
-    if is_float(token):
-        output.append(token)
-    else:
-        # operators.append(token)
-        # while check_precedence(operators[-1], token):
-        #operators.append(token)
-        pass
 
-    i += 1 
+    # while i < len(sample):
+    #     token = tokens[i]
+    #     if is_float(token):
+    #         output.append(token)
+    #     else:
+    #         # operators.append(token)
+    #         # while check_precedence(operators[-1], token):
+    #         #operators.append(token)
+    #         pass
 
-# print(operands)
-# print(operators)
-# print(check_precedence("/","+"))
-# print(check_precedence("-","+"))
-# print(check_precedence("^","("))
-# print(is_op("+"))
-# print(is_op(9))
-# print(operators[-1])
-print(tokens)
+    #     i += 1 
 
-for token in tokens:
-    x = Node(token)
-
+    # print(operands)
+    # print(operators)
+    # print(check_precedence("/","+"))
+    # print(check_precedence("-","+"))
+    # print(check_precedence("^","("))
+    # print(is_op("+"))
+    # print(is_op(9))
+    # print(operators[-1])
+    print(tokens)
 
