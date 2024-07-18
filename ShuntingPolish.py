@@ -3,6 +3,14 @@ import re
 import matplotlib.pyplot as plt
 import json
 
+with open('commands.json') as file:
+    myfile = json.load(file)
+    global maths_funcs
+    global greeks
+    maths_funcs = myfile["functions"]
+    greeks = myfile["greek"]
+
+
 
 def initialise_and_clean(text_input):
     with open('commands.json') as file:
@@ -96,29 +104,28 @@ def is_op(entry):
         return False
 
 def tokenize(entry):
-    test = "9.1 + 23 * 5*4- (110.3 -2)"
-    myregex = r'(\d+\.?\d*|\.\d+|[+/*()-^])'
-    #regex = r'[+/*()-^]|\d+.?\d+?|' #Note this did not work
-    gl = '|'.join(re.escape(value) for value in greeks.values())
-    myregex = myregex + '|' + gl
-    #print(regex)
+    test = "9.1 + 23 * 5*4- (110.3 -2) + alpha"
+    myregex = r'(\d+\.?\d*|\.\d+|[+/*()-^]'
+    gl = '|'.join(re.escape(value) for value in greeks.keys())
+    myregex = myregex + '|' + gl + ')'
     tokens = re.findall(myregex, entry)
     print(tokens)
     return tokens
 
-def peek_the_stack():
-    """
-    Returns None if the stack is empty
-    """
-    try:
-        operators[-1]
-    except IndexError:
-        return None
+# def peek_the_stack():
+#     """
+#     Returns None if the stack is empty
+#     Still in testing
+#     """
+#     try:
+#         operators[-1]
+#     except IndexError:
+#         return None
 
 if __name__ == '__main__':
-    test = "9.1 + 23 * 5*4- (110.3 -2)"
+    test = "9.1 + 23 * 5*4- (110.3 -2) alpha"
     # Implementation of the actual shunting yard algorithm
-    sample = initialise_and_clean()
+    sample = initialise_and_clean(test)
     print(sample)
     sample = tokenize(sample)
     tokens = sample

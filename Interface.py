@@ -26,14 +26,13 @@ with open('commands.json') as file:
 
 
 
+
 window = QWidget()
 window.setWindowTitle("Calculator")
 window.setGeometry(950, 650, 800, 600)
 
 global textinput
 textinput = ""
-
-
 
 
 def generic(val):
@@ -54,8 +53,12 @@ def on_text_changed():
     #print("changed")
     global textinput
     global text_obj
+    tokens = sp.tokenize(textinput)
+    print(len(tokens))
+    print(type(tokens))
+    print(tokens)
     try:
-        print(textbox.cursorPosition())
+        #print(textbox.cursorPosition())
         raw_input = textbox.text().strip()
         print(textinput)
         ajx = [["/","mee"]]
@@ -67,7 +70,7 @@ def on_text_changed():
         else:
             textinput = ""
 
-        
+
         label.setText(textinput)
 
         if text_obj:
