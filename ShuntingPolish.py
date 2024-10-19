@@ -10,8 +10,6 @@ with open('commands.json') as file:
     maths_funcs = myfile["functions"]
     greeks = myfile["greek"]
 
-
-
 def initialise_and_clean(text_input):
     with open('commands.json') as file:
         myfile = json.load(file)
@@ -90,47 +88,105 @@ def typesetting(text):
     #     return text
 
 
-def is_float(entry):
-    try:
-        float(entry)
-        return True
-    except ValueError:
-        return False
-
-def is_op(entry):
-    if str(entry) in "+/*()-^":
-        return True
-    else:
-        return False
-
 def tokenize(entry):
     test = "9.1 + 23 * 5*4- (110.3 -2) + alpha"
     myregex = r'(\d+\.?\d*|\.\d+|[+/*()-^]'
     gl = '|'.join(re.escape(value) for value in greeks.keys())
     myregex = myregex + '|' + gl + ')'
     tokens = re.findall(myregex, entry)
-    print(tokens)
+    i = 0
+    while i < len(tokens) - 1:
+        if not(tokens[i] in "+/*-^" or tokens[i+1] in "+/*-^()"):
+            print("Before change:",tokens, "\n and token 1", tokens[i], "and token 2", tokens[i+1])
+            tokens.insert(i, "*")
+            print("After change:",tokens)
+            i += 1
+        i += 1
     return tokens
 
-# def peek_the_stack():
-#     """
-#     Returns None if the stack is empty
-#     Still in testing
-#     """
-#     try:
-#         operators[-1]
-#     except IndexError:
-#         return None
+
+def peek_and_compare(item, stack:list, queue:list):
+    ordered_operators = "+-/*^"
+    if stack:
+        x = stack[0]
+        a = ordered_operators.index(item)
+        b = ordered_operators.index(x)
+        while b > a:
+            x = stack[0]
+            b = ordered_operators.index(x)
+            queue.append(stack.pop())
+        stack.append(b)
+
+
+
+def convert_to_infix(tokens:list):
+    ordered = []
+    operators = []
+    mystack = [] # values appended to the end of the list and popped from the end
+    myqueue = [] #values appended to the end of the list and popped from the front
+    flag = False
+    status = None
+    for x in tokens:
+        token = x
+        regex = r'\d+\.?\d*'
+        y = re.match(regex, token)
+        print(myqueue)
+        print(token)
+        if y:
+            #print(y.group())
+            status = "number"
+            myqueue.append(token)
+        elif token in "+-/*^":
+            status = "operator"
+            ordered_operators = "(+-/*^"
+            if mystack:
+                y = mystack[-1]
+                a = ordered_operators.index(token)
+                b = ordered_operators.index(y)
+                while b > a:
+                    y = mystack[-1]
+                    print(y)
+                    b = ordered_operators.index(y)
+                    myqueue.append(mystack.pop())
+                    print("sorting out operators")
+                    print(myqueue)
+            mystack.append(token)
+        elif token == '(':
+            status = "left_bracket"
+            mystack.append(token)
+        elif token == ')':
+            status = "right_bracket"
+            print(mystack)
+            while mystack[-1] != '(' and len(mystack) != 0:
+                print("sorting out brackets")
+                print(myqueue)
+                print(mystack)
+                myqueue.append(mystack.pop())
+            mystack.remove('(')
+    while mystack:
+        myqueue.append(mystack.pop())
+
+        
+    return myqueue
+
 
 if __name__ == '__main__':
+    #More advanced test
     test = "9.1 + 23 * 5*4- (110.3 -2) alpha"
+    #Test with implied multiplication
+    test = "9.1 + 23 * 5*4 - 2(110.3 -2)"
+    # Test with just numbers
+    #test = "9.1 + 23 * 5*4- (110.3 -2)"
+    #Simpler test
+    #test = "9.1 + 23 * 5*4"
     # Implementation of the actual shunting yard algorithm
     sample = initialise_and_clean(test)
     print(sample)
     sample = tokenize(sample)
-    tokens = sample
     print(type(sample))
+    print(sample)
     i = 0
+    print(convert_to_infix(sample))
 
 
     # while i < len(sample):
@@ -153,5 +209,5 @@ if __name__ == '__main__':
     # print(is_op("+"))
     # print(is_op(9))
     # print(operators[-1])
-    print(tokens)
+    # print(tokens)
 
