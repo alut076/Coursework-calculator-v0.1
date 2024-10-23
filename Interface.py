@@ -8,7 +8,6 @@ import re
 import json
 import ShuntingPolish as sp
 
-
 matplotlib.use('Qt5Agg')
 # plt.rcParams['text.usetex'] = True
 app = QApplication(sys.argv)
