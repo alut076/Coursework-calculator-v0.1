@@ -2,6 +2,7 @@
 import re
 import matplotlib.pyplot as plt
 import json
+import networkx as nx
 
 with open('commands.json') as file:
     myfile = json.load(file)
@@ -169,6 +170,137 @@ def convert_to_infix(tokens:list):
         
     return myqueue
 
+def making_the_graph(tokens:list):
+    G = nx.Graph()
+    ops = []
+    vals = []
+    new = []
+    flag = True
+    for counter, token in enumerate(tokens):
+        if token in "*/^-+":
+            new.append("ope" + str(counter))
+        else:
+            new.append("val" + str(counter))
+    #for token in new:
+    #    G.add_node(token)
+    #print(new)
+    custom_lables = dict(zip(new, tokens))
+    G.add_nodes_from([(4, {"color": "red"}), (5, {"color": "green"})])
+    # for count, token in enumerate(new):
+    #     if token[:3] == "ope":
+    #         print("hello")
+    #         ops.append(token)
+    #         #get the previous values
+    #         val1 = new[count-2]
+    #         val2 = new[count-1]
+    #         #add the edges
+    #         e1 = (val1, token)
+    #         e2 = (token, val2)
+    #         G.add_edge(*e1)
+    #         G.add_edge(*e2)
+    #         #convert remove the values from list and convert the operator to a value to act as a placeholder
+    #         new.pop(count-2)
+    #         new.pop(count-1)
+    #         token = "val" + str(token[3:])
+
+    #G.add_node(token)
+
+    nx.draw(G, nx.spring_layout(G), with_labels=False, font_weight='bold')
+    #nx.draw_networkx_labels(G,nx.spring_layout(G), custom_lables)
+    plt.show()
+    
+
+
+def making_the_graph2(tokens:list):
+    G = nx.Graph()
+    new = []
+    for counter, token in enumerate(tokens):
+        if token in "*/^-+":
+            new.append("ope" + str(counter))
+        else:
+            new.append("val" + str(counter))
+    
+    for token in new:
+        G.add_node(token)
+    
+    print("Initial nodes:", new)
+    
+    i = 0
+    while i < len(new):
+        if new[i].startswith("ope"):
+            if i >= 2:  # Ensure there are at least two values before the operator
+                val1 = new[i-2]
+                val2 = new[i-1]
+                op = new[i]
+                
+                G.add_edge(val1, op)
+                G.add_edge(op, val2)
+                
+                # Replace the operator and two values with a new value node
+                new_val = "val" + op[3:]
+                new[i-2:i+1] = [new_val]
+                G.add_node(new_val)
+                
+                print(f"Added edges: ({val1}, {op}), ({op}, {val2})")
+                print(f"New state: {new}")
+                
+                # Update i to continue from the new value
+                i = i - 1
+            else:
+                i += 1
+        else:
+            i += 1
+    
+    print("Final graph nodes:", list(G.nodes()))
+    print("Final graph edges:", list(G.edges()))
+    
+    nx.draw(G, with_labels=True, font_weight='bold')
+    plt.show()
+
+def forming_edges(tokens:list):
+    """
+    Note: the tokens input needs to be the tokens in postfix not infix
+    """
+
+    new = []
+    for counter, token in enumerate(tokens):
+        if token in "*/^-+":
+            new.append("ope" + str(counter))
+        else:
+            new.append("val" + str(counter))
+    
+    print("Initial nodes:", new)
+
+    custom_lables = dict(zip(new, tokens))
+    
+    i = 0
+    while i < len(new):
+        if new[i].startswith("ope"):
+            if i >= 2:  # Ensure there are at least two values before the operator
+                val1 = new[i-2]
+                val2 = new[i-1]
+                op = new[i]
+                
+                G.add_edge(val1, op)
+                G.add_edge(op, val2)
+                
+                # Replace the operator and two values with a new value node
+                new_val = "val" + op[3:]
+                new[i-2:i+1] = [new_val]
+                G.add_node(new_val)
+                
+                print(f"Added edges: ({val1}, {op}), ({op}, {val2})")
+                print(f"New state: {new}")
+                
+                # Update i to continue from the new value
+                i = i - 1
+            else:
+                i += 1
+        else:
+            i += 1
+    
+
+
 
 if __name__ == '__main__':
     #More advanced test
@@ -183,10 +315,14 @@ if __name__ == '__main__':
     sample = initialise_and_clean(test)
     print(sample)
     sample = tokenize(sample)
-    print(type(sample))
+    #print(type(sample))
     print(sample)
     i = 0
-    print(convert_to_infix(sample))
+    x = convert_to_infix(sample)
+    print(x)
+    #making_the_graph(x)
+
+
 
 
     # while i < len(sample):

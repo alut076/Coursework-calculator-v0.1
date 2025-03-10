@@ -60,7 +60,7 @@ def on_text_changed():
         #print(textbox.cursorPosition())
         raw_input = textbox.text().strip()
         print(textinput)
-        ajx = [["/","mee"]]
+        ajx = [["/",r"\frac{a}{b}"]]
         for i in ajx:
             raw_input = raw_input.replace(i[0],i[1])
         # If the input is not empty add $ signs
@@ -105,20 +105,29 @@ buttons = []
 
 
 # Create a vertical layout
-layout = QVBoxLayout()
+overall_layout = QHBoxLayout()
+menus = QVBoxLayout()
+main_layout = QVBoxLayout()
+
+overall_layout.addLayout(menus)
+overall_layout.addLayout(main_layout)
+
+
 
 # Create a QLineEdit widget
 textbox = QLineEdit()
-layout.addWidget(textbox)
+main_layout.addWidget(textbox)
 
 # Create a QLabel to display the current text
 label = QLabel('Hello World')
 error_label = QLabel('')
-layout.addWidget(label)
-layout.addWidget(error_label)
-layout.addWidget(canvas)
-layout.addLayout(calcbuttons)
+main_layout.addWidget(label)
+main_layout.addWidget(error_label)
+main_layout.addWidget(canvas)
+main_layout.addLayout(calcbuttons)
 
+expand_menu = QPushButton(text="Menu")
+menus.addWidget(expand_menu)
 
 # Adding the maths function buttons and their corresponding on click functions
 for index, key in enumerate(maths_funcs.keys()):
@@ -142,7 +151,7 @@ textbox.textChanged.connect(on_text_changed)
 
 
 # Set the layout for the main window
-window.setLayout(layout)
+window.setLayout(overall_layout)
 
 # Show the window
 window.show()
