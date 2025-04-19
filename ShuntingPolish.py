@@ -5,7 +5,9 @@ import json
 import networkx as nx
 
 with open('commands.json') as file:
+    # Loads up the relevant files
     myfile = json.load(file)
+    # Sets the greek letters and functions dictionaries as global variables so they can be accessed anywhere
     global maths_funcs
     global greeks
     maths_funcs = myfile["functions"]
@@ -16,14 +18,11 @@ def initialise_and_clean(text_input):
         myfile = json.load(file)
         greeks = myfile["greek"]
 
+    # Removes all whitespace
     sample = list(filter((lambda a:a != " "), text_input))
     sample = "".join(sample)
     return sample
 
-# class Node:
-#     def __init__(self, data):
-#         self.data = data
-#         self.children = []
 
 
 def check_precedence(op1:str, op2:str):
@@ -46,6 +45,7 @@ def check_precedence(op1:str, op2:str):
     elif op2_order ==  op1_order:
         return None
 
+#Attempted go at a typesetting function, was never implemented
 def typesetting(text):
     """
     Working with greek letters for now
@@ -89,253 +89,121 @@ def typesetting(text):
     #     return text
 
 
+
 def tokenize(entry):
-    test = "9.1 + 23 * 5*4- (110.3 -2) + alpha"
-    myregex = r'(\d+\.?\d*|\.\d+|[+/*()-^]'
+    # Sets up regex to match tokens and then matches them
     gl = '|'.join(re.escape(value) for value in greeks.keys())
-    myregex = myregex + '|' + gl + ')'
-    tokens = re.findall(myregex, entry)
-    i = 0
-    while i < len(tokens) - 1:
-        if not(tokens[i] in "+/*-^" or tokens[i+1] in "+/*-^()"):
-            print("Before change:",tokens, "\n and token 1", tokens[i], "and token 2", tokens[i+1])
-            tokens.insert(i, "*")
-            print("After change:",tokens)
-            i += 1
-        i += 1
-    return tokens
+    pattern = r'(\d+\.?\d*|\.\d+|[-+/*()^]|' + gl + r'|[a-zA-Z])'
+    tokens = re.findall(pattern, entry)
+    
+    # Helper to decide if a token is an operand (i.e. one that can be multiplied)
+    def is_operand(token):
+        # operands include numbers, letters, greek names, and closing parentheses.
+        return (token.isdigit() or token.replace('.', '', 1).isdigit() or 
+                token.isalpha() or token in greeks.keys() or token == ')')
+    
+    def is_prefix(token):
+        # tokens that can appear immediately after an operand to require an implicit multiplication:
+        # numbers, letters, greek names, or an opening parenthesis.
+        return (token.isdigit() or token.replace('.', '', 1).isdigit() or 
+                token.isalpha() or token in greeks.keys() or token == '(')
+    
+    # Rebuild the token list inserting an explicit '*' where implicit multiplication is intended.
+    if not tokens:
+        return tokens
+
+    result = [tokens[0]]  # do not need to modify first token
+
+    for token in tokens[1:]:
+        # if the last token in result is an operand and the current token is a prefix that should be multiplied,
+        # then insert an explicit multiplication operator "*".
+        if is_operand(result[-1]) and is_prefix(token):
+            result.append('*')
+        result.append(token)
+    
+    return result
 
 
-def peek_and_compare(item, stack:list, queue:list):
-    ordered_operators = "+-/*^"
-    if stack:
-        x = stack[0]
-        a = ordered_operators.index(item)
-        b = ordered_operators.index(x)
-        while b > a:
-            x = stack[0]
-            b = ordered_operators.index(x)
-            queue.append(stack.pop())
-        stack.append(b)
 
+def convert_to_postfix(tokens: list):
+    mystack = []  # operator stack
+    output = []   # postfix output queue
 
-
-def convert_to_infix(tokens:list):
-    ordered = []
-    operators = []
-    mystack = [] # values appended to the end of the list and popped from the end
-    myqueue = [] #values appended to the end of the list and popped from the front
-    flag = False
-    status = None
-    for x in tokens:
-        token = x
-        regex = r'\d+\.?\d*'
-        y = re.match(regex, token)
-        print(myqueue)
-        print(token)
-        if y:
-            #print(y.group())
-            status = "number"
-            myqueue.append(token)
+    for token in tokens:
+        # If token is a number, variable, or greek letter, add it to output
+        regex = r'(\d+\.?\d*|\.\d+|' + '|'.join(re.escape(k) for k in greeks.keys()) + r'|[a-zA-Z])'
+        if re.match(regex, token):
+            output.append(token)
         elif token in "+-/*^":
-            status = "operator"
-            ordered_operators = "(+-/*^"
-            if mystack:
-                y = mystack[-1]
-                a = ordered_operators.index(token)
-                b = ordered_operators.index(y)
-                while b > a:
-                    y = mystack[-1]
-                    print(y)
-                    b = ordered_operators.index(y)
-                    myqueue.append(mystack.pop())
-                    print("sorting out operators")
-                    print(myqueue)
+            # While the top of stack is an operator with higher or equal precedence:
+            while (mystack and mystack[-1] != '(' and 
+                   check_precedence(mystack[-1], token)):
+                output.append(mystack.pop())
             mystack.append(token)
         elif token == '(':
-            status = "left_bracket"
             mystack.append(token)
         elif token == ')':
-            status = "right_bracket"
-            print(mystack)
-            while mystack[-1] != '(' and len(mystack) != 0:
-                print("sorting out brackets")
-                print(myqueue)
-                print(mystack)
-                myqueue.append(mystack.pop())
-            mystack.remove('(')
+            # Pop until matching '(' is found.
+            while mystack and mystack[-1] != '(':
+                output.append(mystack.pop())
+            if mystack and mystack[-1] == '(':
+                mystack.pop()  # Remove the '(' from the stack
+            else:
+                raise ValueError("Mismatched parentheses")
+    # Pop any remaining operators
     while mystack:
-        myqueue.append(mystack.pop())
+        if mystack[-1] in "()":
+            raise ValueError("Mismatched parentheses")
+        output.append(mystack.pop())
 
-        
-    return myqueue
+    return output
 
-def making_the_graph(tokens:list):
-    G = nx.Graph()
-    ops = []
-    vals = []
-    new = []
-    flag = True
-    for counter, token in enumerate(tokens):
-        if token in "*/^-+":
-            new.append("ope" + str(counter))
-        else:
-            new.append("val" + str(counter))
-    #for token in new:
-    #    G.add_node(token)
-    #print(new)
-    custom_lables = dict(zip(new, tokens))
-    G.add_nodes_from([(4, {"color": "red"}), (5, {"color": "green"})])
-    # for count, token in enumerate(new):
-    #     if token[:3] == "ope":
-    #         print("hello")
-    #         ops.append(token)
-    #         #get the previous values
-    #         val1 = new[count-2]
-    #         val2 = new[count-1]
-    #         #add the edges
-    #         e1 = (val1, token)
-    #         e2 = (token, val2)
-    #         G.add_edge(*e1)
-    #         G.add_edge(*e2)
-    #         #convert remove the values from list and convert the operator to a value to act as a placeholder
-    #         new.pop(count-2)
-    #         new.pop(count-1)
-    #         token = "val" + str(token[3:])
-
-    #G.add_node(token)
-
-    nx.draw(G, nx.spring_layout(G), with_labels=False, font_weight='bold')
-    #nx.draw_networkx_labels(G,nx.spring_layout(G), custom_lables)
-    plt.show()
     
-
-
-def making_the_graph2(tokens:list):
-    G = nx.Graph()
-    new = []
-    for counter, token in enumerate(tokens):
-        if token in "*/^-+":
-            new.append("ope" + str(counter))
-        else:
-            new.append("val" + str(counter))
-    
-    for token in new:
-        G.add_node(token)
-    
-    print("Initial nodes:", new)
-    
-    i = 0
-    while i < len(new):
-        if new[i].startswith("ope"):
-            if i >= 2:  # Ensure there are at least two values before the operator
-                val1 = new[i-2]
-                val2 = new[i-1]
-                op = new[i]
-                
-                G.add_edge(val1, op)
-                G.add_edge(op, val2)
-                
-                # Replace the operator and two values with a new value node
-                new_val = "val" + op[3:]
-                new[i-2:i+1] = [new_val]
-                G.add_node(new_val)
-                
-                print(f"Added edges: ({val1}, {op}), ({op}, {val2})")
-                print(f"New state: {new}")
-                
-                # Update i to continue from the new value
-                i = i - 1
-            else:
-                i += 1
-        else:
-            i += 1
-    
-    print("Final graph nodes:", list(G.nodes()))
-    print("Final graph edges:", list(G.edges()))
-    
-    nx.draw(G, with_labels=True, font_weight='bold')
-    plt.show()
-
-def forming_edges(tokens:list):
+def get_infix(text):
     """
-    Note: the tokens input needs to be the tokens in postfix not infix
+    Brings all the relevant functons together to convert the text
+    to a list of postfix tokens
     """
-
-    new = []
-    for counter, token in enumerate(tokens):
-        if token in "*/^-+":
-            new.append("ope" + str(counter))
-        else:
-            new.append("val" + str(counter))
-    
-    print("Initial nodes:", new)
-
-    custom_lables = dict(zip(new, tokens))
-    
-    i = 0
-    while i < len(new):
-        if new[i].startswith("ope"):
-            if i >= 2:  # Ensure there are at least two values before the operator
-                val1 = new[i-2]
-                val2 = new[i-1]
-                op = new[i]
-                
-                G.add_edge(val1, op)
-                G.add_edge(op, val2)
-                
-                # Replace the operator and two values with a new value node
-                new_val = "val" + op[3:]
-                new[i-2:i+1] = [new_val]
-                G.add_node(new_val)
-                
-                print(f"Added edges: ({val1}, {op}), ({op}, {val2})")
-                print(f"New state: {new}")
-                
-                # Update i to continue from the new value
-                i = i - 1
-            else:
-                i += 1
-        else:
-            i += 1
-    
+    print(f"initial text: {text}")
+    cleaned = initialise_and_clean(text)
+    print(f"cleaned text: {cleaned}")
+    in_order_tokens = tokenize(cleaned)
+    print(f"in order tokens: {in_order_tokens}")
+    postfix_tokens = convert_to_postfix(in_order_tokens)
+    return postfix_tokens
 
 
 
 if __name__ == '__main__':
     #More advanced test
-    test = "9.1 + 23 * 5*4- (110.3 -2) alpha"
-    #Test with implied multiplication
-    test = "9.1 + 23 * 5*4 - 2(110.3 -2)"
-    # Test with just numbers
-    #test = "9.1 + 23 * 5*4- (110.3 -2)"
-    #Simpler test
-    #test = "9.1 + 23 * 5*4"
-    # Implementation of the actual shunting yard algorithm
-    sample = initialise_and_clean(test)
-    print(sample)
-    sample = tokenize(sample)
-    #print(type(sample))
-    print(sample)
-    i = 0
-    x = convert_to_infix(sample)
-    print(x)
+    # test = "9.1 + 23 * 5*4- (110.3 -2) alpha"
+    # #Test with implied multiplication
+    # test = "9.1 + 23 * 5*4 - 2(110.3 -2)"
+    # # Test with just numbers
+    # #test = "9.1 + 23 * 5*4- (110.3 -2)"
+    # #Simpler test
+    # #test = "9.1 + 23 * 5*4"
+    # # Implementation of the actual shunting yard algorithm
+    # sample = initialise_and_clean(test)
+    # print(sample)
+    # sample = tokenize(sample)
+    # #print(type(sample))
+    # print(sample)
+    # i = 0
+    # x = convert_to_postfix(sample)
+    # print(x)
     #making_the_graph(x)
 
+    my_expression = "3.3x(2.5) * 9.3x * 24x - 12x"
+    my_expression = "(3x)^2"
+    my_expression = "5x + 5x"
+    print(tokenize("-3-3"))
+
+    sample = initialise_and_clean(my_expression)
+    sample = tokenize(sample)
+    print(sample)
 
 
-
-    # while i < len(sample):
-    #     token = tokens[i]
-    #     if is_float(token):
-    #         output.append(token)
-    #     else:
-    #         # operators.append(token)
-    #         # while check_precedence(operators[-1], token):
-    #         #operators.append(token)
-    #         pass
-
-    #     i += 1 
 
     # print(operands)
     # print(operators)

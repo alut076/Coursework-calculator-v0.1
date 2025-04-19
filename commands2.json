@@ -171,10 +171,25 @@
             }
         },
         "user_defined_consts": {
+            "Mass of Earth": {
+                "symbol": "m_E",
+                "value": "5.972 * 10^24",
+                "unit": "kg"
+            },
+            "Radius of Earth": {
+                "symbol": "r_E",
+                "value": "6.378*10^6",
+                "unit": "m"
+            },
             "a": {
-                "symbol": "b",
-                "value": "c",
-                "unit": "d"
+                "symbol": "\u03c0",
+                "value": "2001",
+                "unit": ""
+            },
+            "my value": {
+                "symbol": "a_e",
+                "value": "23014.2131",
+                "unit": "kg"
             },
             "": {
                 "symbol": "",

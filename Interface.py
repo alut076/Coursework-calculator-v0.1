@@ -1,6 +1,6 @@
-import PyQt5
+import PyQt6
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QWidget, QLineEdit, QVBoxLayout, QLabel, QPushButton, QGridLayout, QHBoxLayout
+from PyQt6.QtWidgets import QApplication, QWidget, QLineEdit, QVBoxLayout, QLabel, QPushButton, QGridLayout, QHBoxLayout
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import sys
 import matplotlib
@@ -8,9 +8,12 @@ import re
 import json
 import ShuntingPolish as sp
 
-matplotlib.use('Qt5Agg')
+matplotlib.use('QtAgg')
 # plt.rcParams['text.usetex'] = True
 app = QApplication(sys.argv)
+
+
+
 
 fig, ax = plt.subplots()
 ax.axis('off')
@@ -47,6 +50,9 @@ def button_click(val):
     def button_clicked():
         generic(val)
     return button_clicked
+
+def new_line():
+    pass
 
 def on_text_changed():
     #print("changed")
@@ -105,8 +111,8 @@ buttons = []
 
 
 # Create a vertical layout
-overall_layout = QHBoxLayout()
-menus = QVBoxLayout()
+overall_layout = QVBoxLayout()
+menus = QHBoxLayout()
 main_layout = QVBoxLayout()
 
 overall_layout.addLayout(menus)
@@ -157,4 +163,4 @@ window.setLayout(overall_layout)
 window.show()
 
 # Run the application
-sys.exit(app.exec_())
+sys.exit(app.exec())
